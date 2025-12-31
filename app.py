@@ -101,7 +101,7 @@ HTML_TEMPLATE = """
         {% endif %}
     </div>
 
-    <h2 style="margin-top:20px;">Youth Help Desk</h2>
+    <h2 style="margin-top:20px;">Local Youth Surveyor</h2>
 
     <div class="card">
         <h3>नया टॉपिक शुरू करें</h3>
