@@ -3,3 +3,5 @@ Flask-SQLAlchemy
 Flask-Dance[sqla]
 blinker
 gunicorn
+pytz
+SQLAlchemy
