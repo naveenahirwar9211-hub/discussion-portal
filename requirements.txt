@@ -5,3 +5,4 @@ blinker
 gunicorn
 pytz
 SQLAlchemy
+psycopg2-binary
