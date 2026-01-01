@@ -32,7 +32,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Like Table - यूजर आईडी और पोस्ट आईडी का रिश्ता रखने के लिए
 likes = db.Table('likes',
     db.Column('user_email', db.String(100), db.ForeignKey('user_stat.email')),
     db.Column('problem_id', db.Integer, db.ForeignKey('problem.id'))
@@ -48,8 +47,8 @@ class Problem(db.Model):
     author_name = db.Column(db.String(100))
     author_img = db.Column(db.String(500))
     is_pinned = db.Column(db.Boolean, default=False)
+    # यहाँ बदलाव किया गया है ताकि डिफ़ॉल्ट IST समय मिले
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IST))
-    # Likes relationship
     liked_by = db.relationship('UserStat', secondary=likes, backref=db.backref('liked_posts', lazy='dynamic'))
     comments = db.relationship('Comment', backref='problem', cascade="all, delete-orphan", lazy=True)
 
@@ -58,13 +57,14 @@ class Comment(db.Model):
     content = db.Column(db.Text)
     user_name = db.Column(db.String(100))
     user_img = db.Column(db.String(500))
+    # यहाँ बदलाव किया गया है
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IST))
     problem_id = db.Column(db.Integer, db.ForeignKey('problem.id'))
 
 with app.app_context():
     db.create_all()
 
-# --- HTML डिजाइन ---
+# --- HTML डिजाइन (कोई बदलाव नहीं) ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -81,8 +81,6 @@ HTML_TEMPLATE = """
         .time-text { font-size: 10px; color: #888; }
         .btn-google { background: white; color: #444; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
         .admin-action { color: #d93025; text-decoration: none; font-size: 10px; border: 1px solid #d93025; padding: 1px 4px; border-radius: 3px; margin-left: 5px; }
-        
-        /* Like Button Style */
         .like-section { display: flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 14px; color: #444; }
         .like-btn { text-decoration: none; color: #e91e63; font-weight: bold; border: 1px solid #e91e63; padding: 3px 8px; border-radius: 15px; transition: 0.3s; }
         .like-btn:hover { background: #e91e63; color: white; }
@@ -198,7 +196,6 @@ def like_problem(problem_id):
     resp = google.get("/oauth2/v2/userinfo")
     if resp.ok:
         user_email = resp.json().get("email")
-        # यूजर को रजिस्टर करें अगर पहली बार आया है
         user = UserStat.query.get(user_email)
         if not user:
             user = UserStat(email=user_email)
@@ -216,7 +213,15 @@ def post_problem():
     resp = google.get("/oauth2/v2/userinfo")
     if resp.ok:
         ud = resp.json()
-        db.session.add(Problem(title=request.form['title'], content=request.form['content'], author_name=ud.get("name"), author_img=ud.get("picture")))
+        # यहाँ समय को IST में फिक्स किया गया है
+        new_prob = Problem(
+            title=request.form['title'], 
+            content=request.form['content'], 
+            author_name=ud.get("name"), 
+            author_img=ud.get("picture"),
+            timestamp=datetime.now(IST)
+        )
+        db.session.add(new_prob)
         db.session.commit()
     return redirect(url_for("index"))
 
@@ -226,7 +231,15 @@ def post_comment(problem_id):
     resp = google.get("/oauth2/v2/userinfo")
     if resp.ok:
         ud = resp.json()
-        db.session.add(Comment(content=request.form['content'], user_name=ud.get("name"), user_img=ud.get("picture"), problem_id=problem_id))
+        # यहाँ समय को IST में फिक्स किया गया है
+        new_comm = Comment(
+            content=request.form['content'], 
+            user_name=ud.get("name"), 
+            user_img=ud.get("picture"), 
+            problem_id=problem_id,
+            timestamp=datetime.now(IST)
+        )
+        db.session.add(new_comm)
         db.session.commit()
     return redirect(url_for("index"))
 
