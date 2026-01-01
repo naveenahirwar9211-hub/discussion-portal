@@ -47,8 +47,8 @@ class Problem(db.Model):
     author_name = db.Column(db.String(100))
     author_img = db.Column(db.String(500))
     is_pinned = db.Column(db.Boolean, default=False)
-    # यहाँ बदलाव किया गया है ताकि डिफ़ॉल्ट IST समय मिले
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IST))
+    # डिफ़ॉल्ट समय को और पक्का किया गया
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
     liked_by = db.relationship('UserStat', secondary=likes, backref=db.backref('liked_posts', lazy='dynamic'))
     comments = db.relationship('Comment', backref='problem', cascade="all, delete-orphan", lazy=True)
 
@@ -57,14 +57,13 @@ class Comment(db.Model):
     content = db.Column(db.Text)
     user_name = db.Column(db.String(100))
     user_img = db.Column(db.String(500))
-    # यहाँ बदलाव किया गया है
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IST))
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
     problem_id = db.Column(db.Integer, db.ForeignKey('problem.id'))
 
 with app.app_context():
     db.create_all()
 
-# --- HTML डिजाइन (कोई बदलाव नहीं) ---
+# --- HTML डिजाइन ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -213,13 +212,13 @@ def post_problem():
     resp = google.get("/oauth2/v2/userinfo")
     if resp.ok:
         ud = resp.json()
-        # यहाँ समय को IST में फिक्स किया गया है
+        # समय को सीधे पक्के तौर पर IST (Asia/Kolkata) में लिया गया
         new_prob = Problem(
             title=request.form['title'], 
             content=request.form['content'], 
             author_name=ud.get("name"), 
             author_img=ud.get("picture"),
-            timestamp=datetime.now(IST)
+            timestamp=datetime.now(pytz.timezone('Asia/Kolkata'))
         )
         db.session.add(new_prob)
         db.session.commit()
@@ -231,13 +230,13 @@ def post_comment(problem_id):
     resp = google.get("/oauth2/v2/userinfo")
     if resp.ok:
         ud = resp.json()
-        # यहाँ समय को IST में फिक्स किया गया है
+        # समय को सीधे पक्के तौर पर IST (Asia/Kolkata) में लिया गया
         new_comm = Comment(
             content=request.form['content'], 
             user_name=ud.get("name"), 
             user_img=ud.get("picture"), 
             problem_id=problem_id,
-            timestamp=datetime.now(IST)
+            timestamp=datetime.now(pytz.timezone('Asia/Kolkata'))
         )
         db.session.add(new_comm)
         db.session.commit()
